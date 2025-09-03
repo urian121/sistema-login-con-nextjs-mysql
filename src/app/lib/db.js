@@ -10,7 +10,7 @@ export async function query({ query, values = [] }) {
     host: "localhost", // Dirección del servidor de la base de datos
     database: "bd_login_nextjs", // Nombre de la base de datos a la que se conecta
     user: "root", // Nombre de usuario para la conexión
-    password: "", // Contraseña del usuario
+    password: "4825", // Contraseña del usuario
     port: "3306", // Puerto donde se escucha la base de datos (por defecto MySQL)
   });
 
@@ -24,7 +24,7 @@ export async function query({ query, values = [] }) {
   } catch (error) {
     // Manejar errores durante la conexión o ejecución de la consulta
     console.error("Error al conectar a la base de datos:", error.message);
-    //throw Error(error.message); // Descomentar para lanzar error en caso de fallo
-    return { error }; // Retornar el error para su manejo en el llamador
+    dbconnection.end(); // Asegurar que se cierre la conexión
+    throw new Error(`Database error: ${error.message}`); // Lanzar error para manejo en el API route
   }
 }

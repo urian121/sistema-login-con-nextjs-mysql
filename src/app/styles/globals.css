@@ -49,6 +49,30 @@
   border-color: hsl(var(--border));
 }
 
+/* Estilos para placeholders más pequeños */
+.form-control::placeholder {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+input::placeholder {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Estilos para texto de input más pequeño */
+.form-control {
+  font-size: 13px;
+}
+
+input {
+  font-size: 13px;
+}
+
+select {
+  font-size: 13px;
+}
+
 html,
 body {
   max-width: 100vw;
@@ -62,17 +86,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
 }
 
 /* Shadcn-style components */

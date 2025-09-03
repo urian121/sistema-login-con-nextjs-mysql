@@ -1,43 +1,74 @@
 'use client';
 
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { showToast } from 'nextjs-toast-notify';
+import FormHeader from '../components/FormHeader';
+import SubmitButton from '../components/SubmitButton';
+import FormLayout from '../components/FormLayout';
 
 export default function LoginForm() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting }
+  } = useForm({
+    defaultValues: {
+      email: '',
+      password: ''
+    }
   });
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('');
+
   
   const router = useRouter();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setMessage('');
-
+  const onSubmit = async (data) => {
     try {
-      const response = await axios.post('/api/login', formData);
+      // Validación adicional antes del envío
+      if (!data.email || !data.password) {
+        showToast.error('Por favor completa todos los campos', {
+          duration: 3000,
+          progress: true,
+          position: 'bottom-center',
+          transition: 'bounceIn',
+          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+          sound: true
+        });
+        return;
+      }
+
+      const response = await axios.post('/api/login', data, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Validar estructura de respuesta
+      if (!response?.data) {
+        throw new Error('Respuesta inválida del servidor');
+      }
+
+      const { token, user } = response.data;
+      
+      if (!token || !user) {
+        throw new Error('Datos de autenticación incompletos');
+      }
       
       // Guardar el token en localStorage
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       
-      setMessage('¡Login exitoso! Redirigiendo...');
-      setMessageType('success');
+      showToast.success('¡Login exitoso! Redirigiendo...', {
+        duration: 1500,
+        progress: true,
+        position: 'bottom-center',
+        transition: 'bounceIn',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg>',
+        sound: true
+      });
       
       // Redirigir al dashboard después de un breve delay
       setTimeout(() => {
@@ -45,96 +76,120 @@ export default function LoginForm() {
       }, 1500);
       
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error en login:', error);
       
-      // Manejo optimizado de errores con axios
+      let errorMessage = 'Error inesperado. Intenta nuevamente.';
+      
+      // Manejo robusto de errores
       if (error.response) {
-        // El servidor respondió con un código de error
-        setMessage(error.response.data.error || 'Error al iniciar sesión');
+        // Error de respuesta del servidor (4xx, 5xx)
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        if (status === 401) {
+          errorMessage = 'Credenciales incorrectas. Verifica tu email y contraseña.';
+        } else if (status === 400) {
+          errorMessage = data?.error || 'Datos inválidos. Revisa la información ingresada.';
+        } else if (status === 500) {
+          errorMessage = 'Error del servidor. Intenta más tarde.';
+        } else {
+          errorMessage = data?.error || `Error ${status}. Intenta nuevamente.`;
+        }
       } else if (error.request) {
-        // La petición se hizo pero no se recibió respuesta
-        setMessage('Error de conexión. Verifica tu internet.');
-      } else {
-        // Algo más pasó
-        setMessage('Error inesperado. Intenta nuevamente.');
+        // Error de red/conexión
+        errorMessage = 'Sin conexión al servidor. Verifica tu internet.';
+      } else if (error.message) {
+        // Error de validación o procesamiento
+        errorMessage = error.message;
       }
-      setMessageType('error');
-    } finally {
-      setIsLoading(false);
+      
+      showToast.error(errorMessage, {
+        duration: 5000,
+        progress: true,
+        position: 'bottom-center',
+        transition: 'bounceIn',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+        sound: true
+      });
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4">
-      <div className="w-full max-w-md">
-        <div className="shadcn-card p-6 space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-semibold tracking-tight">Iniciar Sesión</h1>
-            <p className="text-sm text-muted-foreground">
-              Ingresa tus credenciales para acceder a tu cuenta
-            </p>
-          </div>
+    <FormLayout>
+      <FormHeader 
+        title="Iniciar Sesión"
+        description="Ingresa tus credenciales para acceder a tu cuenta"
+      />
           
-          {message && (
-            <div className={`p-3 rounded-md text-sm ${
-              messageType === 'success' 
-                ? 'bg-green-50 text-green-800 border border-green-200' 
-                : 'bg-red-50 text-red-800 border border-red-200'
-            }`}>
-              {message}
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="email" className="shadcn-label">
-                Email
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="mb-3">
+              <label htmlFor="email" className="form-label fw-medium">
+                Correo Electrónico
               </label>
               <input
                 type="email"
                 id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="shadcn-input"
+                {...register("email", {
+                  required: "El correo electrónico es obligatorio",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Ingresa un correo electrónico válido"
+                  }
+                })}
+                className={`form-control form-control-lg ${
+                  errors.email ? 'is-invalid' : ''
+                }`}
                 placeholder="tu@email.com"
-                required
               />
+              {errors.email && (
+                <div className="invalid-feedback">
+                  {errors.email.message}
+                </div>
+              )}
             </div>
             
-            <div className="space-y-2">
-              <label htmlFor="password" className="shadcn-label">
+            <div className="mb-4">
+              <label htmlFor="password" className="form-label fw-medium">
                 Contraseña
               </label>
               <input
                 type="password"
                 id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="shadcn-input"
+                {...register("password", {
+                  required: "La contraseña es obligatoria",
+                  minLength: {
+                    value: 6,
+                    message: "La contraseña debe tener al menos 6 caracteres"
+                  }
+                })}
+                className={`form-control form-control-lg ${
+                  errors.password ? 'is-invalid' : ''
+                }`}
                 placeholder="••••••••"
-                required
               />
+              {errors.password && (
+                <div className="invalid-feedback">
+                  {errors.password.message}
+                </div>
+              )}
             </div>
             
-            <button 
-              type="submit" 
-              className="shadcn-button shadcn-button-primary w-full"
-              disabled={isLoading}
+            <SubmitButton 
+              isSubmitting={isSubmitting}
+              loadingText="Iniciando sesión..."
             >
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </button>
+              Iniciar Sesión
+            </SubmitButton>
           </form>
           
-          <div className="text-center text-sm text-muted-foreground">
-            ¿No tienes una cuenta?{' '}
-            <Link href="/register" className="text-primary hover:underline">
-              Regístrate aquí
-            </Link>
-          </div>
-        </div>
+      <div className="text-center">
+        <p className="text-muted mb-0">
+          ¿No tienes una cuenta?{' '}
+          <Link href="/register" className="text-decoration-none fw-medium">
+            Regístrate aquí
+          </Link>
+        </p>
       </div>
-    </div>
+    </FormLayout>
   );
 }

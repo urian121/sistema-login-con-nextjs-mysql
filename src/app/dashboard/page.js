@@ -72,7 +72,7 @@ export default function Dashboard() {
             <ul className="navbar-nav ms-auto">
               <li className="nav-item dropdown">
                 <a 
-                  className="nav-link dropdown-toggle d-flex align-items-center" 
+                  className="nav-link dropdown-toggle d-flex align-items-center text-white" 
                   href="#" 
                   role="button" 
                   data-bs-toggle="dropdown" 
