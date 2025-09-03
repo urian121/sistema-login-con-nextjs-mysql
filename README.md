@@ -2,6 +2,8 @@
 
 Un sistema completo de autenticación desarrollado con **Next.js 14**, **MySQL** y **Bootstrap 5**. Incluye registro de usuarios, login seguro con JWT, dashboard protegido y notificaciones modernas.
 
+![Demo](https://raw.githubusercontent.com/urian121/imagenes-proyectos-github/refs/heads/master/sistema-login-con-nextjs-y-mysql.gif)
+
 ## ✨ Características
 
 - 🔒 **Autenticación segura** con JWT y bcrypt
