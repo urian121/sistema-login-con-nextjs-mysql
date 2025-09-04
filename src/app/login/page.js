@@ -27,90 +27,21 @@ export default function LoginForm() {
 
   const onSubmit = async (data) => {
     try {
-      // Validación adicional antes del envío
-      if (!data.email || !data.password) {
-        showToast.error('Por favor completa todos los campos', {
-          duration: 3000,
-          progress: true,
-          position: 'bottom-center',
-          transition: 'bounceIn',
-          icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-          sound: true
-        });
-        return;
-      }
-
-      const response = await axios.post('/api/login', data, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      // Validar estructura de respuesta
-      if (!response?.data) {
-        throw new Error('Respuesta inválida del servidor');
-      }
-
+      const response = await axios.post('/api/login', data);
       const { token, user } = response.data;
       
-      if (!token || !user) {
-        throw new Error('Datos de autenticación incompletos');
-      }
-      
-      // Guardar el token en localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       
-      showToast.success('¡Login exitoso! Redirigiendo...', {
-        duration: 1500,
-        progress: true,
-        position: 'bottom-center',
-        transition: 'bounceIn',
-        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg>',
-        sound: true
-      });
-      
-      // Redirigir al dashboard después de un breve delay
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1500);
+      showToast.success('¡Login exitoso!');
+      setTimeout(() => router.push('/dashboard'), 1000);
       
     } catch (error) {
-      console.error('Error en login:', error);
+      const message = error.response?.status === 401 
+        ? 'Email o contraseña incorrectos' 
+        : 'Error de conexión. Intenta nuevamente';
       
-      let errorMessage = 'Error inesperado. Intenta nuevamente.';
-      
-      // Manejo robusto de errores
-      if (error.response) {
-        // Error de respuesta del servidor (4xx, 5xx)
-        const status = error.response.status;
-        const data = error.response.data;
-        
-        if (status === 401) {
-          errorMessage = 'Credenciales incorrectas. Verifica tu email y contraseña.';
-        } else if (status === 400) {
-          errorMessage = data?.error || 'Datos inválidos. Revisa la información ingresada.';
-        } else if (status === 500) {
-          errorMessage = 'Error del servidor. Intenta más tarde.';
-        } else {
-          errorMessage = data?.error || `Error ${status}. Intenta nuevamente.`;
-        }
-      } else if (error.request) {
-        // Error de red/conexión
-        errorMessage = 'Sin conexión al servidor. Verifica tu internet.';
-      } else if (error.message) {
-        // Error de validación o procesamiento
-        errorMessage = error.message;
-      }
-      
-      showToast.error(errorMessage, {
-        duration: 5000,
-        progress: true,
-        position: 'bottom-center',
-        transition: 'bounceIn',
-        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
-        sound: true
-      });
+      showToast.error(message);
     }
   };
 
