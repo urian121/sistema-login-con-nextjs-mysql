@@ -31,13 +31,7 @@ Un sistema completo de autenticación desarrollado con **Next.js 14**, **MySQL**
 
 ## 🚀 Instalación y Configuración
 
-### 1. Clonar el repositorio
-```bash
-git clone <url-del-repositorio>
-cd sistema-login-con-nextjs-mysql
-```
-
-### 2. Instalar dependencias
+### 1. Clonar el repositorio e instalar dependencias
 ```bash
 npm install
 # o
